@@ -20,6 +20,7 @@ type Options<K, V> = {
   cache?: boolean;
   cacheKeyFn?: (key: any) => any;
   cacheMap?: CacheMap<K, Promise<V>>;
+  preBatchLoadSortFn?: (a: K, b: K) => any;
 };
 
 // If a custom cache is provided, it must be of this type (a subset of ES6 Map).
@@ -241,6 +242,11 @@ function dispatchQueueBatch<K, V>(
   loader: DataLoader<K, V>,
   queue: LoaderQueue<K, V>
 ) {
+
+  if (loader._options && loader._options.preBatchLoadSortFn) {
+    queue = queue.sort((a, b) => loader._options.preBatchLoadSortFn(a.key, b.key));
+  }
+
   // Collect all keys to be loaded in this dispatch
   var keys = queue.map(({ key }) => key);
 

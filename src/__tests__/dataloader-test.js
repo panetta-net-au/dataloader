@@ -728,3 +728,27 @@ describe('It is resilient to job queue ordering', () => {
   });
 
 });
+
+describe('It provides sorted keys to the batch load function', () => {
+  it('fails when the batch load function is not passed a sorted array', async () => {
+    var sortFn = (a, b) => b-a; //reverse order
+    var identityLoader = new DataLoader(keys => Promise.resolve(keys.sort(sortFn)));
+
+    var promiseAll = identityLoader.loadMany([1, 2, 3, 4]);
+    expect(promiseAll).to.be.instanceof(Promise);
+
+    var values = await promiseAll;
+    expect(values).not.to.deep.equal([ 1, 2, 3, 4 ]);
+  });
+
+  it('succeeds when the batch load function is passed an array sorted the same way', async () => {
+    var sortFn = (a, b) => b-a; //reverse order
+    var identityLoader = new DataLoader(keys => Promise.resolve(keys.sort(sortFn)), { preBatchLoadSortFn: sortFn });
+
+    var promiseAll = identityLoader.loadMany([1, 2, 3, 4]);
+    expect(promiseAll).to.be.instanceof(Promise);
+
+    var values = await promiseAll;
+    expect(values).to.deep.equal([ 1, 2, 3, 4 ]);
+  });
+});
